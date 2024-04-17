@@ -1,0 +1,8 @@
+intake/
+lib/
+library.db
+secret
+
+__pycache__
+venv
+*.swp
