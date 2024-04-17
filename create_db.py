@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect('library.db')
+conn = sqlite3.connect('lib/library.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS files
              (id INTEGER PRIMARY KEY AUTOINCREMENT,

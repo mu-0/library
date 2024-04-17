@@ -6,6 +6,7 @@ import re
 import shutil
 
 lib_dir = "lib"
+lib_db = "library.db"
 
 # Converts a string to a filename-appropriate one
 def format_filename(s):
@@ -60,8 +61,20 @@ def print_result(result):
     i, title, author, year = result
     print(f"{i}: {title}, {author}, {year}")
 
-def main():
-    import argparse
+def main(lib_dir, lib_db):
+
+    # Check that library directory is valid
+    if not os.path.isdir(lib_dir):
+        print("Could not find library directory!")
+        return
+    lib_dir = os.path.abspath(lib_dir)
+
+    # Check that library database is valid
+    if not os.path.isfile(os.path.join(lib_dir, lib_db)):
+        print("Could not find library database!")
+        return
+    lib_db = os.path.abspath(os.path.join(lib_dir, lib_db))
+
     parser = argparse.ArgumentParser(description="Search for books in the library")
     parser.add_argument("-a", "--author", help="Search by author name")
     parser.add_argument("-t", "--title", help="Search by book title")
@@ -74,7 +87,7 @@ def main():
 
     args = parser.parse_args()
 
-    conn = connect_to_db('library.db')
+    conn = connect_to_db(lib_db)
 
     if args.extract:
         if args.dir == None:
@@ -98,5 +111,5 @@ def main():
     conn.close()
 
 if __name__ == "__main__":
-    main()
+    main(lib_dir, lib_db)
 

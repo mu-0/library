@@ -77,7 +77,7 @@ def handle_file(file, lib_dir):
     os.remove("tmp.json")
 
     # Add file to library database
-    conn = sqlite3.connect('library.db')
+    conn = sqlite3.connect('lib/library.db')
     c = conn.cursor()
     c.execute("INSERT INTO files (filename, title, author, year, edition, tags) VALUES (?, ?, ?, ?, ?, ?)", (new_filename, filedata["title"], filedata["author"], filedata["year"], filedata["edition"], filedata["tags"]))
     conn.commit()
