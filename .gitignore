@@ -1,6 +1,6 @@
 intake/
 lib/
-secret
+.env
 
 __pycache__
 venv

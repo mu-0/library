@@ -1,7 +1,10 @@
+#!venv/bin/python
+
 import os
 import hashlib
 import json
 import sqlite3
+import dotenv
 from openai import OpenAI
 
 # Returns list of files in intake_dir
@@ -28,10 +31,7 @@ def check_uniqueness(md5, lib_dir):
 def get_file_metadata(file):
     basename = os.path.basename(file)
 
-    with open('secret', 'r') as f:
-        secret = f.read().strip()
-    
-    client = OpenAI(api_key = secret)
+    client = OpenAI(api_key = os.environ['OPENAI_KEY'])
     
     completion = client.chat.completions.create(
       model="gpt-3.5-turbo",
@@ -50,7 +50,7 @@ def get_file_metadata(file):
     return filedata
 
 
-def handle_file(file, lib_dir):
+def handle_file(file, lib_dir, lib_db):
     print(f"Parsing {file}...")
 
     # Check if file is already in lib
@@ -77,7 +77,7 @@ def handle_file(file, lib_dir):
     os.remove("tmp.json")
 
     # Add file to library database
-    conn = sqlite3.connect('lib/library.db')
+    conn = sqlite3.connect(lib_db)
     c = conn.cursor()
     c.execute("INSERT INTO files (filename, title, author, year, edition, tags) VALUES (?, ?, ?, ?, ?, ?)", (new_filename, filedata["title"], filedata["author"], filedata["year"], filedata["edition"], filedata["tags"]))
     conn.commit()
@@ -86,11 +86,32 @@ def handle_file(file, lib_dir):
     # Move file to library
     os.rename(file, os.path.join(lib_dir, new_filename))
 
-def handle_intake(files, lib_dir):
 
+def main():
+
+    intake_dir = os.environ['INTAKE_DIR']
+    # Check that intake directory is valid
+    if not os.path.isdir(intake_dir):
+        print("Could not find intake directory!")
+        return
+
+    lib_dir = os.environ['LIB_DIR']
+    # Check that library directory is valid
+    if not os.path.isdir(lib_dir):
+        print("Could not find library directory!")
+        return
+
+    lib_db = os.path.join(lib_dir, os.environ['LIB_DB'])
+    # Check that library database is valid
+    if not os.path.isfile(os.path.join(lib_dir, lib_db)):
+        print("Could not find library database!")
+        return
+
+    files = intake(intake_dir)
     for file in files:
-        handle_file(file, lib_dir)
+        handle_file(file, lib_dir, lib_db)
+
 
 if __name__ == "__main__":
-    files = intake("intake")
-    handle_intake(files, "lib")
+    dotenv.load_dotenv()
+    main()
