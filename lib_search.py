@@ -1,3 +1,5 @@
+#!venv/bin/python
+
 import sqlite3
 import argparse
 import sys
