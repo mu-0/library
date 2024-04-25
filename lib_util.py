@@ -1,12 +1,13 @@
 import re
+import json
 
-# returns a list of tags. tags in the tag field are comma separated and may contain spaces
+# returns a list of tags. tags in the tag field are a json-encoded array.
 def get_tags(conn):
     tags = []
 
     found = conn.cursor().execute("SELECT tags FROM files").fetchall()
     for item in found:
-        item_tags = [tag.strip() for tag in item[0].split(',')]
+        item_tags = json.loads(item[0])
         for tag in item_tags:
             if tag not in tags and tag != "":
                 tags.append(tag)

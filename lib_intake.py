@@ -45,7 +45,7 @@ def get_file_metadata(file):
         filedata = {"title": "", "author": "", "year": ""}
 
     filedata["edition"] = ""
-    filedata["tags"] = ""
+    filedata["tags"] = []
 
     return filedata
 
@@ -79,7 +79,7 @@ def handle_file(file, lib_dir, lib_db):
     # Add file to library database
     conn = sqlite3.connect(lib_db)
     c = conn.cursor()
-    c.execute("INSERT INTO files (filename, title, author, year, edition, tags) VALUES (?, ?, ?, ?, ?, ?)", (new_filename, filedata["title"], filedata["author"], filedata["year"], filedata["edition"], filedata["tags"]))
+    c.execute("INSERT INTO files (filename, title, author, year, edition, tags) VALUES (?, ?, ?, ?, ?, ?)", (new_filename, filedata["title"], filedata["author"], filedata["year"], filedata["edition"], json.dumps(filedata["tags"])))
     conn.commit()
     conn.close()
 

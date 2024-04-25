@@ -31,7 +31,7 @@ def build_query(author=None, title=None, year=None, tag=None):
     if year:
         conditions.append(f" year = {year}")
     if tag:
-        conditions.append(f" tags LIKE '%{tag}%'")
+        conditions.append(f" EXISTS ( SELECT 1 FROM json_each(files.tags) WHERE json_each.value = '{tag}');")
     if len(conditions) == 0:
         return "SELECT id, title, author, year FROM files"
     return base_query + " AND".join(conditions)
