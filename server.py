@@ -1,6 +1,6 @@
 #!venv/bin/python
 
-from flask import Flask, request, render_template, send_from_directory, jsonify
+from flask import Flask, request, render_template, send_from_directory, jsonify, Response
 import psycopg2
 import psycopg2.extras
 import os
@@ -8,6 +8,8 @@ import re
 import dotenv
 import lib_util
 import json
+import boto3
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
 app = Flask(__name__)
 
@@ -16,9 +18,9 @@ def get_items(author=None, title=None, year=None, tag=None, itemid=None):
     query = "SELECT * FROM files"
     conditions = []
     if author:
-        conditions.append(f" author LIKE '%{author}%'")
+        conditions.append(f" author ILIKE '%{author}%'")
     if title:
-        conditions.append(f" title LIKE '%{title}%'")
+        conditions.append(f" title ILIKE '%{title}%'")
     if year:
         conditions.append(f" year = {year}")
     if tag is not None:
@@ -59,8 +61,22 @@ def retrieve():
     filename = files[0]["filename"]
     title = lib_util.format_filename(title) + os.path.splitext(filename)[1]
     
-    lib_dir = os.environ['LIB_DIR']
-    return send_from_directory(lib_dir, filename, as_attachment=True, download_name=title)
+    region = os.environ["AWS_REGION"]
+    lib_bucket_name = os.environ["LIB_BUCKET_NAME"]
+    lib_bucket_path = os.environ["LIB_BUCKET_PATH"]
+    file = os.path.join(lib_bucket_path, filename)
+    s3_client = boto3.client('s3', region_name=region)
+    try:
+        file_obj = s3_client.get_object(Bucket=lib_bucket_name, Key=file)
+        return Response(
+            file_obj["Body"].read(),
+            mimetype = "application/octet-stream",
+            headers = {"Content-Disposition": f"attachment;filename={title}"}
+        )
+    except (NoCredentialsError, PartialCredentialsError) as e:
+        return str(e)
+
+    
 
 
 @app.route('/data', methods=['POST'])

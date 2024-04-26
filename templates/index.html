@@ -11,7 +11,7 @@
 <body>
     <h1>Books</h1>
 
-    <select id="tagSelect" onchange="updateList()">
+    <select id="tagSelect"> <!--onchange="updateList()">--!>
         <option value="none">-- tags --</option>
         {% for tag in tags %}
         <option value="{{ tag }}">{{ tag }}</option>
@@ -20,6 +20,7 @@
 
     <input type="text" id="titleSearch" placeholder="title">
     <input type="text" id="authorSearch" placeholder="author">
+    <button type="button" onclick="updateList()">search</button>
     
     <ul id="itemList">
 
@@ -55,10 +56,10 @@
             })
             .catch(error => console.error("Error:", error));
         }
-        document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById("authorSearch").addEventListener("blur", function() { updateList() });
-            document.getElementById("titleSearch").addEventListener("blur", function() { updateList() });
-        });
+        //document.addEventListener("DOMContentLoaded", function() {
+        //    document.getElementById("authorSearch").addEventListener("blur", function() { updateList() });
+        //    document.getElementById("titleSearch").addEventListener("blur", function() { updateList() });
+        //});
     </script>
 
 </body>

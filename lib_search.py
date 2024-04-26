@@ -27,9 +27,9 @@ def build_query(author=None, title=None, year=None, tag=None):
     base_query = "SELECT id, title, author, year FROM files WHERE"
     conditions = []
     if author:
-        conditions.append(f" author LIKE '%{author}%'")
+        conditions.append(f" author ILIKE '%{author}%'")
     if title:
-        conditions.append(f" title LIKE '%{title}%'")
+        conditions.append(f" title ILIKE '%{title}%'")
     if year:
         conditions.append(f" year = {year}")
     if tag:
