@@ -1,7 +1,8 @@
 #!venv/bin/python
 
 from flask import Flask, request, render_template, send_from_directory, jsonify
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import os
 import re
 import dotenv
@@ -21,15 +22,16 @@ def get_items(author=None, title=None, year=None, tag=None, itemid=None):
     if year:
         conditions.append(f" year = {year}")
     if tag is not None:
-        conditions.append(f" EXISTS ( SELECT 1 FROM json_each(files.tags) WHERE json_each.value = '{tag}');")
+        conditions.append(f" EXISTS ( SELECT 1 FROM json_array_elements_text(files.tags) AS elem WHERE elem = '{tag}');")
     if itemid:
         conditions.append(f" id = {itemid}")
     if len(conditions) > 0:
         query += " WHERE " + " AND".join(conditions)
 
-    conn = sqlite3.connect(os.path.join(os.environ['LIB_DIR'], os.environ['LIB_DB']))
-    conn.row_factory = sqlite3.Row
-    items = conn.cursor().execute(query).fetchall()
+    conn = psycopg2.connect(os.environ["LIB_DB_URI"])
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute(query)
+    items = cursor.fetchall()
     conn.close()
 
     return [dict(ix) for ix in items]
@@ -38,7 +40,7 @@ def get_items(author=None, title=None, year=None, tag=None, itemid=None):
 @app.route('/')
 def index():
     items = get_items()
-    tags = sorted(set(sum([json.loads(item["tags"]) for item in items], [])))
+    tags = sorted(set(sum([item["tags"] for item in items], [])))
     return render_template('index.html', tags=tags)
 
 

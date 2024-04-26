@@ -27,6 +27,9 @@
     
     <script>
         function updateList() {
+            const list = document.getElementById('itemList');
+            list.innerHTML = "loading...";
+
             const tag = document.getElementById("tagSelect").value;
             const title = document.getElementById("titleSearch").value;
             const author = document.getElementById("authorSearch").value;
