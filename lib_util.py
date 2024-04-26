@@ -1,13 +1,13 @@
 import re
-import json
 
 # returns a list of tags. tags in the tag field are a json-encoded array.
-def get_tags(conn):
+def get_tags(cursor):
     tags = []
 
-    found = conn.cursor().execute("SELECT tags FROM files").fetchall()
+    cursor.execute("SELECT tags FROM files")
+    found = cursor.fetchall()
     for item in found:
-        item_tags = json.loads(item[0])
+        item_tags = item[0]
         for tag in item_tags:
             if tag not in tags and tag != "":
                 tags.append(tag)

@@ -1,6 +1,5 @@
 #!venv/bin/python
 
-import sqlite3
 import argparse
 import sys
 import os
@@ -8,15 +7,18 @@ import re
 import shutil
 import lib_util
 import dotenv
+import psycopg2
 
-def search_books(conn, search_query):
-    results = conn.cursor().execute(search_query).fetchall()
+def search_books(cursor, search_query):
+    cursor.execute(search_query)
+    results = cursor.fetchall()
     return results
 
-def library_extract(conn, ids):
+def library_extract(cursor, ids):
     results = []
     for i in ids:
-        found = conn.cursor().execute(f"SELECT filename, title FROM files WHERE id = {i}").fetchall()
+        cursor.execute(f"SELECT filename, title FROM files WHERE id = {i}")
+        found = cursor.fetchall()
         if len(found) > 0:
             results.append(found[0])
     return results
@@ -31,7 +33,7 @@ def build_query(author=None, title=None, year=None, tag=None):
     if year:
         conditions.append(f" year = {year}")
     if tag:
-        conditions.append(f" EXISTS ( SELECT 1 FROM json_each(files.tags) WHERE json_each.value = '{tag}');")
+        conditions.append(f" EXISTS ( SELECT 1 FROM json_array_elements_text(files.tags) AS elem WHERE elem = '{tag}');")
     if len(conditions) == 0:
         return "SELECT id, title, author, year FROM files"
     return base_query + " AND".join(conditions)
@@ -46,12 +48,6 @@ def main():
     # Check that library directory is valid
     if not os.path.isdir(lib_dir):
         print("Could not find library directory!")
-        return
-
-    lib_db = os.path.join(lib_dir, os.environ['LIB_DB'])
-    # Check that library database is valid
-    if not os.path.isfile(os.path.join(lib_dir, lib_db)):
-        print("Could not find library database!")
         return
 
     parser = argparse.ArgumentParser(description="Search for books in the library")
@@ -70,8 +66,9 @@ def main():
     args = parser.parse_args()
 
     if args.tags:
-        conn = sqlite3.connect(lib_db)
-        tags = lib_util.get_tags(conn)
+        conn = psycopg2.connect(os.environ["LIB_DB_URI"])
+        cursor = conn.cursor()
+        tags = lib_util.get_tags(cursor)
         conn.close()
         print(", ".join(tags))
         return
@@ -79,8 +76,9 @@ def main():
         if args.dir == None:
             print("Extraction requires --dir argument!")
             return
-        conn = sqlite3.connect(lib_db)
-        results = library_extract(conn, args.extract)
+        conn = psycopg2.connect(os.environ["LIB_DB_URI"])
+        cursor = conn.cursor()
+        results = library_extract(cursor, args.extract)
         conn.close()
         output_dir = os.path.abspath(args.dir)
         for result in results:
@@ -92,8 +90,9 @@ def main():
             shutil.copy(source, dest)
     else:
         query = build_query(author=args.author, title=args.title, year=args.year, tag=args.tag)
-        conn = sqlite3.connect(lib_db)
-        results = search_books(conn, query)
+        conn = psycopg2.connect(os.environ["LIB_DB_URI"])
+        cursor = conn.cursor()
+        results = search_books(cursor, query)
         conn.close()
         for result in results:
             print_result(result)
