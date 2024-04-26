@@ -3,7 +3,9 @@
 import os
 import hashlib
 import json
-import sqlite3
+import psycopg2
+import boto3
+from botocore.exceptions import ClientError
 import dotenv
 from openai import OpenAI
 
@@ -19,13 +21,6 @@ def calculate_file_md5(file_path):
         for chunk in iter(lambda: file.read(4096), b''):
             md5_hash.update(chunk)
     return md5_hash.hexdigest()
-
-# Check if a file already exists in lib
-def check_uniqueness(md5, lib_dir):
-    file_hashes = [f.split('.')[0] for f in os.listdir(lib_dir)]
-    if md5 in file_hashes:
-        return False
-    return True
 
 # Get file metadata from GPT. Returns dictionary
 def get_file_metadata(file):
@@ -50,15 +45,28 @@ def get_file_metadata(file):
     return filedata
 
 
-def handle_file(file, lib_dir, lib_db):
+def handle_file(file, force=False):
     print(f"Parsing {file}...")
 
-    # Check if file is already in lib
     file_md5 = calculate_file_md5(file)
-    if not check_uniqueness(file_md5, lib_dir):
-        print(f"File {file} already exists in lib! (md5={file_md5})")
-        return False
     new_filename = file_md5 + os.path.splitext(file)[-1]
+
+    # Set up S3 client
+    region = os.environ["AWS_REGION"]
+    lib_bucket_name = os.environ["LIB_BUCKET_NAME"]
+    lib_file = os.path.join(os.environ["LIB_BUCKET_PATH"], new_filename)
+    s3_client = boto3.client("s3", region_name=region)
+    
+    # Make sure file doesn't already exist
+    if not force:
+        try:
+            s3_client.head_object(Bucket=lib_bucket_name, Key=lib_file)
+            print("File already exists on server!")
+            return
+        except ClientError as e:
+            if int(e.response["Error"]["Code"]) != 404:
+                print("Other client error:", e)
+                return
 
     # Attempt to get file metadata
     filedata = get_file_metadata(file)
@@ -76,15 +84,16 @@ def handle_file(file, lib_dir, lib_db):
         filedata = json.load(f)
     os.remove("tmp.json")
 
+    response = s3_client.upload_file(file, lib_bucket_name, lib_file)
+
     # Add file to library database
-    conn = sqlite3.connect(lib_db)
-    c = conn.cursor()
-    c.execute("INSERT INTO files (filename, title, author, year, edition, tags) VALUES (?, ?, ?, ?, ?, ?)", (new_filename, filedata["title"], filedata["author"], filedata["year"], filedata["edition"], json.dumps(filedata["tags"])))
+    conn = psycopg2.connect(os.environ["LIB_DB_URI"])
+    cursor = conn.cursor()
+    cursor.execute(f"INSERT INTO files (filename, title, author, year, edition, tags) VALUES ('{new_filename}', '{filedata['title']}', '{filedata['author']}', '{filedata['year']}', '{filedata['edition']}', '{json.dumps(filedata['tags'])}')")
     conn.commit()
     conn.close()
 
-    # Move file to library
-    os.rename(file, os.path.join(lib_dir, new_filename))
+    os.remove(file)
 
 
 def main():
@@ -95,21 +104,9 @@ def main():
         print("Could not find intake directory!")
         return
 
-    lib_dir = os.environ['LIB_DIR']
-    # Check that library directory is valid
-    if not os.path.isdir(lib_dir):
-        print("Could not find library directory!")
-        return
-
-    lib_db = os.path.join(lib_dir, os.environ['LIB_DB'])
-    # Check that library database is valid
-    if not os.path.isfile(os.path.join(lib_dir, lib_db)):
-        print("Could not find library database!")
-        return
-
     files = intake(intake_dir)
     for file in files:
-        handle_file(file, lib_dir, lib_db)
+        handle_file(file)
 
 
 if __name__ == "__main__":
