@@ -1,0 +1,9 @@
+sqlite3
+dotenv
+openai
+awscli
+Flask
+boto3
+botocore
+Jinja2
+psycopg2-binary
