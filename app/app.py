@@ -5,13 +5,25 @@ import psycopg2
 import psycopg2.extras
 import os
 import re
-import dotenv
-import lib_util
 import json
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
 app = Flask(__name__)
+
+# Converts a string to a filename-appropriate one
+def format_filename(s):
+    # Convert the filename to lowercase
+    s = s.lower()
+    # Replace spaces with underscores
+    s = s.replace(" ", "_")
+    # Remove any characters that are not alphanumeric, underscores, or hyphens
+    s = re.sub(r'[^a-z0-9_-]', '', s)
+    # Ensure the filename does not start or end with underscores or hyphens
+    s = s.strip("_-")
+    # Truncate the filename to a maximum length of 255 characters
+    s = s[:255]
+    return s
 
 def get_items(author=None, title=None, year=None, tag=None, itemid=None):
 
@@ -59,7 +71,7 @@ def retrieve():
 
     title = files[0]["title"]
     filename = files[0]["filename"]
-    title = lib_util.format_filename(title) + os.path.splitext(filename)[1]
+    title = format_filename(title) + os.path.splitext(filename)[1]
     
     region = os.environ["AWS_REGION"]
     lib_bucket_name = os.environ["LIB_BUCKET_NAME"]
@@ -94,8 +106,4 @@ def data():
     items = sorted(items, key = lambda x: x["title"])
     return jsonify(items)
 
-
-if __name__ == '__main__':
-    dotenv.load_dotenv()
-    app.run(debug=True)
 

@@ -1,9 +1,0 @@
-sqlite3
-python-dotenv
-openai
-awscli
-Flask
-boto3
-botocore
-Jinja2
-psycopg2-binary

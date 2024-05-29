@@ -1,0 +1,6 @@
+gunicorn
+flask
+boto3
+botocore
+Jinja2
+psycopg2-binary
