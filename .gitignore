@@ -1,5 +1,4 @@
-intake/
-lib/
+instance/
 .env
 
 __pycache__

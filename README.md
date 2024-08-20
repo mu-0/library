@@ -8,3 +8,7 @@ Outline
 - Served with Gunicorn
 
 Step 1: minimum viable docker/gunicorn/flask/heroku app
+
+Starting from `demos/heroku_flask_gunicorn_docker` satisfies this.
+
+Step 2: minimum viable login manager
