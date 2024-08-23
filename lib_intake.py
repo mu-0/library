@@ -87,7 +87,7 @@ def handle_file(file, force=False):
     response = s3_client.upload_file(file, lib_bucket_name, lib_file)
 
     # Add file to library database
-    conn = psycopg2.connect(os.environ["LIB_DB_URI"])
+    conn = psycopg2.connect(os.environ["FILES_DB"])
     cursor = conn.cursor()
     cursor.execute(f"INSERT INTO files (filename, title, author, year, edition, tags) VALUES ('{new_filename}', '{filedata['title']}', '{filedata['author']}', '{filedata['year']}', '{filedata['edition']}', '{json.dumps(filedata['tags'])}')")
     conn.commit()
