@@ -1,3 +1,6 @@
+import pdf2image
+import io
+import base64
 import os
 import re
 import flask
@@ -124,6 +127,27 @@ def index():
     items = Files.query.all()
     tags = sorted(set(sum([item.tags for item in items], [])))
     return flask.render_template('index.html', tags=tags)
+
+# returns first page of pdf as b64 data
+def get_page_image(pdf_path):
+
+    # Convert the first page of the PDF to an image
+    images = pdf2image.convert_from_path(pdf_path, first_page=1, last_page=1)
+    
+    # Convert the image to a byte buffer
+    img_buffer = io.BytesIO()
+    images[0].save(img_buffer, format='JPEG')
+    
+    # Encode the byte data to base64
+    return base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+
+@app.route("/get_data", methods=["POST"])
+def get_data():
+    return flask.jsonify({"image_b64": get_page_image("test.pdf")})
+
+@app.route("/intake")
+def intake():
+    return flask.render_template("intake.html")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

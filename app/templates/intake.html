@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic UI for Terminal App</title>
+    <style>
+        /* Optional basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        #dynamicImage {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Terminal App Interface</h1>
+
+    <!-- Form to collect user input -->
+    <form id="myForm">
+        <label for="input">Input:</label>
+        <input type="text" id="input" name="input" />
+        <button type="submit">Submit</button>
+    </form>
+
+	<input type="file" id="fileInput" multiple>
+
+    <!-- Display the list of files -->
+    <ul id="fileList"></ul>
+
+
+    <!-- Image that will be dynamically updated based on user input -->
+    <img id="dynamicImage" src="default_image.png" alt="Image" />
+
+    <!-- Link to external JavaScript file -->
+	<script src="{{ url_for('static', filename='app.js') }}"></script>
+
+</body>
+</html>
+
